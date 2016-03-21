@@ -310,6 +310,15 @@ module.exports = function(RED) {
         })
     }
     
+    function mintByHash(node, msg) {
+         return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
+             mintReward(contractInstance, node.agentAddress || msg.agentAddress || msg.payload,node.amount || msg.amount, function(balance){
+                msg.payload = balance
+                node.send(msg)
+            })
+        })
+    }
+    
     function saveSubscriptionLocally(msg, event, node){
         if (!msg) {msg = {subscriptions: []}}
         if (!msg.subscriptions){msg.subscriptions = []}
@@ -356,11 +365,25 @@ module.exports = function(RED) {
         this.agentAddress = n.agentAddress
         RED.nodes.createNode(this,n)
         var node = this
-        this.on('input', function (msg) {            
+        this.on('input', function (msg) {
+            node.send(msg)        
             balanceByHash(node, msg)
         })        
     }
     RED.nodes.registerType("Scooby Balance",balance)
+    
+     /* MINT */
+    function mint(n) {
+        this.contractHash = n.contractHash
+        this.amount = n.amount
+        RED.nodes.createNode(this,n)
+        var node = this
+        this.on('input', function (msg) {
+            node.send(msg)        
+            mintByHash(node, msg)
+        })        
+    }
+    RED.nodes.registerType("Scooby Mint",mint)
 }
 
 
@@ -400,6 +423,11 @@ function getTokenContract(contractLocation, tokenContract, cb){
 function getBalance(contractInstance, account, cb){
     //console.log("sent account", account)
 	return cb(contractInstance.balanceOf(RAppAccount))
+}
+
+function mintReward(contractInstance, account, amount, cb){
+	//console.log("instance", contractInstance.mint)
+	return cb(JSON.stringify(contractInstance.mint.sendTransaction(account, amount, {from:account, gas: 3000000})))
 }
 
 function mintToken(contractInstance, account, amount, cb){

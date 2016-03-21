@@ -91,7 +91,7 @@
     });    
 </script>
 
-<!-- Balance -->
+<!-- BALANCE -->
 <script type="text/x-red" data-template-name="Scooby Balance">
     <div class="form-row">
         <label for="node-input-agentAddress"><i class="fa fa-slack"></i> Address</label>
@@ -119,6 +119,50 @@
         defaults: {
             name: {value:""},
             agentAddress: {value:"0xac19dcdafbd2396339d2b4ae961ae212db2831cf"},
+            contractHash: {value:"0xcdd8be60354a2ad0410c1e95f7395306f846a3d9"}
+        },
+        color:"#4C9689",
+        icon: "hash.png",
+        align: "right",
+        inputs:1,
+        outputs:1,
+        label: function() {
+            return this.name||"";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });    
+</script>
+
+<!-- MINT -->
+<script type="text/x-red" data-template-name="Scooby Mint">
+    <div class="form-row">
+        <label for="node-input-amount"><i class="fa fa-slack"></i> Amount</label>
+        <input type="text" id="node-input-amount" placeholder="amount" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-contractHash"><i class="fa fa-slack"></i> Contract to subscribe to</label>
+        <input type="text" id="node-input-contractHash" placeholder="contractHash" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="Scooby Mint">
+    <p>Mints the <b>msg.amount</b> of new reward.</p>
+    <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
+</script>
+
+
+<script type="text/javascript">   
+    RED.nodes.registerType('Scooby Mint',{
+        category: 'Rewards',
+        defaults: {
+            name: {value:""},
+            amount: {value: 1},
             contractHash: {value:"0xcdd8be60354a2ad0410c1e95f7395306f846a3d9"}
         },
         color:"#4C9689",
