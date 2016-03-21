@@ -1,29 +1,29 @@
 {
-  "name": "node-red-contrib-slack",
+  "name": "node-red-scooby",
   "version": "0.1.1",
-  "description": "A node-red module to post to Slack.com",
-  "main": "slackpost.js",
+  "description": "A node-red module to work with scooby",
+  "main": "scooby.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/yayadrian/node-red-slack.git"
+    "url": "git://github.com/genecyber/node-red-scooby.git"
   },
   "keywords": [
     "node-red",
-    "slack",
-    "post"
+    "ethereum",
+    "web3"
   ],
   "node-red": {
     "nodes": {
-      "slack": "slackpost.js"
+      "rewards": "scooby.js"
     }
   },
-  "author": "Adrian Lansdown",
+  "author": "Shannon Code",
   "license": "MIT",
   "dependencies": {
     "request": "^2.51.0",
-    "slack-client": "^1.4.0"
+    "web3": "^0.15.3"
   }
 }

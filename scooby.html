@@ -15,7 +15,7 @@
   limitations under the License.
 -->
 
-<script type="text/x-red" data-template-name="slack">
+<!--<script type="text/x-red" data-template-name="slack">
     <div class="form-row">
         <label for="node-input-channelURL"><i class="fa fa-slack"></i> WebHook URL</label>
         <input type="text" id="node-input-channelURL" placeholder="channelURL" style=" vertical-align: top;">
@@ -91,11 +91,27 @@
 <script type="text/x-red" data-help-name="Slack Bot Out">
     <p>Sends the <b>msg.payload</b> to Slack based on the Bot API token provided.</p>
     <p>You can optionally override the destination channel if required - either in the edit dialogue or by setting <b>msg.channel</b>.</p>
+</script> -->
+
+<script type="text/x-red" data-template-name="Scooby Subscribe">
+    <div class="form-row">
+        <label for="node-input-contractHash"><i class="fa fa-slack"></i> Contract to subscribe to</label>
+        <input type="text" id="node-input-contractHash" placeholder="contractHash" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="Scooby Subscribe">
+    <p>Sends the <b>msg.payload</b> when a subscribed event occurs.</p>
+    <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
 </script>
 
 
 <script type="text/javascript">
-    RED.nodes.registerType('slack',{
+    /*RED.nodes.registerType('slack',{
         category: 'social',
         defaults: {
             name: {value:""},
@@ -149,6 +165,25 @@
         align: "right",
         inputs:1,
         outputs:0,
+        label: function() {
+            return this.name||"";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });*/
+    RED.nodes.registerType('Scooby Subscribe',{
+        category: 'Rewards',
+        defaults: {
+            name: {value:""},
+            apiToken: {value:""},
+            channel: {value:""}           
+        },
+        color:"#4C9689",
+        icon: "hash.png",
+        align: "right",
+        inputs:1,
+        outputs:1,
         label: function() {
             return this.name||"";
         },
