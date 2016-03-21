@@ -375,6 +375,7 @@ module.exports = function(RED) {
      /* MINT */
     function mint(n) {
         this.contractHash = n.contractHash
+        this.agentAddress = n.agentAddress
         this.amount = n.amount
         RED.nodes.createNode(this,n)
         var node = this
