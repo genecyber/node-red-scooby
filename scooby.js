@@ -312,7 +312,7 @@ module.exports = function(RED) {
     
     function mintByHash(node, msg) {
          return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
-             mintReward(contractInstance, node.agentAddress || msg.agentAddress || msg.payload,node.amount || msg.amount, function(balance){
+             mintReward(contractInstance, node.agentAddress || msg.agentAddress || msg.payload, node.amount || msg.amount || msg.payload, function(balance){
                 msg.payload = balance
                 node.send(msg)
             })
@@ -428,10 +428,7 @@ function getBalance(contractInstance, account, cb){
 
 function mintReward(contractInstance, account, amount, cb){
 	//console.log("instance", contractInstance.mint)
-	return cb(JSON.stringify(contractInstance.mint.sendTransaction(account, amount, {from:account, gas: 3000000})))
-}
-
-function mintToken(contractInstance, account, amount, cb){
-	//console.log("instance", contractInstance.mint)
-	return cb(JSON.stringify(contractInstance.mint.sendTransaction(account, amount, {from:account, gas: 3000000})))
+    console.log("amount", amount)
+    console.log("account", account)
+	return cb(JSON.stringify(contractInstance.mint.sendTransaction(account, Number(amount), {from:account, gas: 3000000})))
 }
