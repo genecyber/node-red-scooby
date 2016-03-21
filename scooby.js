@@ -14,22 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-
+var web3, RAppAccount, RAppID
 module.exports = function(RED) {
     "use strict";
 
     var request = require('request');
     var slackBotGlobal = {};
     var connecting = false;
-    var RAppID = "0xac19dcdafbd2396339d2b4ae961ae212db2831cf"
+    RAppID = "0xac19dcdafbd2396339d2b4ae961ae212db2831cf"
     
-    var web3
     var Web3 = require("web3")
     if(web3 !== undefined)
     web3 = new Web3(web3.currentProvider);
     else {
     web3 = new Web3(new Web3.providers.HttpProvider("http://162.243.248.133:8545"))
     }
+    RAppAccount = web3.eth.accounts[0] 
     var tokenContract = web3.eth.contract([{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_owner","type":"address"},{"name":"_amount","type":"uint256"}],"name":"mint","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_s","type":"bytes32"}],"name":"setSymbol","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_n","type":"bytes32"}],"name":"setName","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_d","type":"uint256"}],"name":"setDecimals","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"tranferFrom","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_new_owner","type":"address"}],"name":"transferOwnership","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"}],"name":"unapprove","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"inputs":[],"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"}],"name":"TokenCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":false,"name":"_amount","type":"uint256"}],"name":"TokenMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"}],"name":"OwnershipTransfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Approved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"}],"name":"Unapproved","type":"event"}]);
     var tokens = []
 
@@ -282,38 +282,88 @@ module.exports = function(RED) {
         })
         return needle.length > 0
     }
+    
     function subscribeByHash(node, msg){
-        return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
+        return getTokenContract(msg.contractHash || node.contractHash, tokenContract, function(contractInstance) {
             eventSubscribe(contractInstance, function(event) {
-                var msg = { payload: event }
-                subscriptions.push({owner: msg.owner || null, contract: node.contractHash || msg.contractHash})
+                msg = saveSubscriptionLocally(msg, event, node)
                 node.send(msg)
             })
         })
     }
+    
+    function historyByHash(node, msg){
+        return getTokenContract(msg.contractHash || node.contractHash, tokenContract, function(contractInstance) {
+            eventHistory(contractInstance, function(event) {
+                msg.payload = event
+                node.send(msg)
+            })
+        })
+    }
+    
+    function balanceByHash(node, msg) {
+         return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
+             getBalance(contractInstance, node.agentAddress || msg.agentAddress || msg.payload, function(balance){
+                msg.payload = balance
+                node.send(msg)
+            })
+        })
+    }
+    
+    function saveSubscriptionLocally(msg, event, node){
+        if (!msg) {msg = {subscriptions: []}}
+        if (!msg.subscriptions){msg.subscriptions = []}
+        msg.payload = event
+        var newSubscriber = {owner: msg.owner || null, contract: msg.contractHash || node.contractHash}                
+        subscriptions.push(newSubscriber)
+        msg.subscriptions.push(newSubscriber)
+        return msg
+    }
+    
     function subscribe(n) {
+        this.contractHash = n.contractHash;
         var contractHash
         RED.nodes.createNode(this,n)
         var node = this
         this.on('input', function (msg) {
-            if (!msg.payload.event && msg.contractHash) {
-                contractHash = msg.contractHash
-                if (!subscriptions.contain({contract: msg.contractHash})) {
+            msg.subscriptions = subscriptions
+            if (!msg.payload.event && (msg.contractHash || node.contractHash)) {
+                contractHash = (msg.contractHash || node.contractHash)
+                if (!subscriptions.contain({contract: contractHash})) {
                     subscribeByHash(node, msg)
                 }
             }
         })
-        if (debug)
-            getTokenContract("0xcdd8be60354a2ad0410c1e95f7395306f846a3d9", tokenContract, function(contractInstance) {
-                eventSubscribe(contractInstance, function(e) {
-                    var msg = { payload: e }
-                    node.send(msg)
-                })
-            })
-        
     }
     RED.nodes.registerType("Scooby Subscribe",subscribe)
+    
+    /* HISTORICAL EVENTS */
+
+    function history(n) {
+        this.contractHash = n.contractHash;
+        var contractHash
+        RED.nodes.createNode(this,n)
+        var node = this
+        this.on('input', function (msg) {          
+            historyByHash(node, msg)
+        })        
+    }
+    RED.nodes.registerType("Scooby History",history)
+    
+    /* BALANCE */
+    function balance(n) {
+        this.contractHash = n.contractHash
+        this.agentAddress = n.agentAddress
+        RED.nodes.createNode(this,n)
+        var node = this
+        this.on('input', function (msg) {            
+            balanceByHash(node, msg)
+        })        
+    }
+    RED.nodes.registerType("Scooby Balance",balance)
 }
+
+
 
 function eventSubscribe(contractInstance, cb){
 	var events = contractInstance.allEvents({}, function(error, log){
@@ -321,6 +371,14 @@ function eventSubscribe(contractInstance, cb){
 			return cb(log)
 		}
 	})
+}
+
+function eventHistory(contractInstance, cb){
+	var events = contractInstance.allEvents({fromBlock: 0, toBlock: 'latest'})    
+    events.get(function(error, logs){
+        //console.log("history", logs)
+        return cb(logs)
+    })
 }
 
 function newTokenContract(account, tokenContract ,cb){
@@ -340,8 +398,8 @@ function getTokenContract(contractLocation, tokenContract, cb){
 }
 
 function getBalance(contractInstance, account, cb){
-	//console.log("bal", contractInstance)
-	return cb(JSON.stringify(contractInstance.balanceOf(account)))
+    //console.log("sent account", account)
+	return cb(contractInstance.balanceOf(RAppAccount))
 }
 
 function mintToken(contractInstance, account, amount, cb){
