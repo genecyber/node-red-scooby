@@ -31,250 +31,11 @@ module.exports = function(RED) {
     }
     RAppAccount = web3.eth.accounts[0] 
     var tokenContract = web3.eth.contract([{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_owner","type":"address"},{"name":"_amount","type":"uint256"}],"name":"mint","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_s","type":"bytes32"}],"name":"setSymbol","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_n","type":"bytes32"}],"name":"setName","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_d","type":"uint256"}],"name":"setDecimals","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"tranferFrom","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_new_owner","type":"address"}],"name":"transferOwnership","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"}],"name":"unapprove","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"inputs":[],"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"}],"name":"TokenCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":false,"name":"_amount","type":"uint256"}],"name":"TokenMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"}],"name":"OwnershipTransfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Approved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"}],"name":"Unapproved","type":"event"}]);
+    function makeContractTemplate(iface) {
+        return web3.eth.contract(JSON.parse(iface))
+    }
     var tokens = []
-
-    // set this to true to spam your console with stuff.
-    /*var slackDebug = true;
-
-    function slackLogin(token, node){
-        if(slackBotGlobal[token] && slackBotGlobal[token].connected === false && connecting === false) {
-            if (slackDebug) { node.log("Slack not connected"); }
-            connecting = true;
-            slackBotGlobal[token].login();
-        } else {
-           if (slackDebug) { node.log("Slack already connected"); }
-        }
-    }
-
-    function slackLogOut(token, node){
-        if(slackBotGlobal[token]) {
-            if (slackDebug) { node.log("Slack disconnecting."); }
-            connecting = false;
-            var dis = slackBotGlobal[token].disconnect();
-            slackBotGlobal[token].removeAllListeners();
-            slackBotGlobal = {};
-        }
-    }
-
-    function slackReconnect(token, node) {
-        slackLogOut(token, node);
-        slackLogin(token, node);
-    }
-
-    function slackBotIn(n) {
-        RED.nodes.createNode(this,n);
-
-        this.channel = n.channel || "";
-        this.apiToken = n.apiToken;
-        var node = this;
-
-        var Slack = require('slack-client');
-
-        var token = this.apiToken;
-        var autoReconnect = true;
-        var autoMark = true;
-
-        var slack = {};
-        if(slackBotGlobal && slackBotGlobal[token]) {
-            if (slackDebug) { node.log("IN: old slack session"); }
-            slack = slackBotGlobal[token];
-        } else {
-            if (slackDebug) { node.log("IN: new slack session"); }
-            slack = new Slack(token, autoReconnect, autoMark);
-
-            slack.on('loggedIn', function () {
-                node.log('in: Logged in: ');
-            })
-
-            slackBotGlobal[token] = slack;
-        }
-
-        slack.on('message', function(message) {
-            var msg = {
-                payload: message.text
-            };
-
-            var slackChannel = slack.getChannelGroupOrDMByID(message.channel);
-            var fromUser = slack.getUserByID(message.user);
-
-            if(!fromUser) {
-                fromUser = {
-                    name: ""
-                };
-            }
-
-            if(node.channel === "" || slackChannel.name === node.channel) {
-                passMsg();
-            }
-
-            function passMsg() {
-                msg.slackObj = {
-                    "id": message.id,
-                    "type": message.type,
-                    "text": message.text,
-                    "channelName": slackChannel.name,
-                    "channel": message.channel,
-                    "fromUser": fromUser.name
-                };
-
-                node.send(msg);
-            }
-
-        });
-
-        slack.on('error', function (error) {
-            console.trace();
-            node.error('Error: ' + error);
-
-            if(error === 'ENOTFOUND') {
-                slackLogin(token, node);
-            }
-        });
-
-        slackLogin(token, node);
-        setTimeout(function() {
-            slackLogin(token, node);
-        }, 10000);
-
-        this.on('close', function() {
-            slackLogOut(token, node);
-        });
-
-    }
-    RED.nodes.registerType("Slack Bot In", slackBotIn)
-
-
-    function slackBotOut(n) {
-        RED.nodes.createNode(this,n);
-
-        this.apiToken = n.apiToken;
-        this.channel = n.channel || "";
-        var node = this;
-
-        var Slack = require('slack-client');
-
-        var token = this.apiToken;
-        var autoReconnect = true;
-        var autoMark = true;
-
-        var slack = {};
-        if(slackBotGlobal && slackBotGlobal[token]) {
-            if (slackDebug) { node.log("OUT: using an old slack session"); }
-            slack = slackBotGlobal[token];
-        } else {
-            if (slackDebug) { node.log("OUT: new slack session"); }
-            slack = new Slack(token, autoReconnect, autoMark);
-
-            slack.on('loggedIn', function () {
-                node.log('OUT: Logged in.');
-            })
-
-            slackBotGlobal[token] = slack;
-        }
-
-        this.on('input', function (msg) {
-            if (slackDebug) { node.log(JSON.stringify(msg)); }
-
-            if(!slack.connected) {
-                node.log('Reconencting to Slack.');
-                slackReconnect(token, node);
-            }
-
-            var channel = node.channel || msg.channel || "";
-
-            var slackChannel = "";
-            var slackObj = msg.slackObj;
-
-            if(channel !== "") {
-                if (slackDebug) { node.log("Getting slackChannel (" + channel + ") from node/message."); }
-                slackChannel = slack.getChannelGroupOrDMByName(channel);
-            } else {
-                if (slackDebug) { node.log("Getting slackChannel (" + channel + ") from slackObj in message."); }
-                slackChannel = slack.getChannelGroupOrDMByID(slackObj.channel);
-            }
-
-            if (slackDebug) node.log(typeof slackChannel);
-            if(typeof slackChannel === "undefined") {
-                node.error("'slackChannel' is not defined, check you are specifying a channel in the message (msg.channel) or the node config.");
-                node.error("Message: '" + JSON.stringify(msg));
-                slackLogin(token, node);
-                return false;
-            }
-
-            if (slackChannel.is_member === false || slackChannel.is_im === false) {
-                node.warn("Slack bot is not a member of this Channel");
-                return false;
-            }
-
-            try {
-                slackChannel.send(msg.payload);
-            }
-            catch (err) {
-                console.trace();
-                node.log(err,msg);
-
-                // Leave it 10 seconds, then log in again.
-                setTimeout(function() {
-                    slackLogin(token, node);
-                }, 10000);
-            }
-        });
-
-        slack.on('error', function (error) {
-            console.trace();
-            node.error('Error sending to Slack: ' + JSON.stringify(error));
-        });
-
-        slackLogin(token, node);
-        setTimeout(function() {
-            slackLogin(token, node);
-        }, 10000);
-
-        this.on('close', function() {
-            slackLogOut(token, node);
-        });
-    }
-    RED.nodes.registerType("Slack Bot Out", slackBotOut)
-
-
-    function slackOut(n) {
-        RED.nodes.createNode(this,n);
-
-        this.channelURL = n.channelURL;
-        this.username = n.username || "";
-        this.emojiIcon = n.emojiIcon || "";
-        var node = this;
-
-        this.on('input', function (msg) {
-            var channelURL = node.channelURL || msg.channelURL;
-            var username = node.username || msg.username;
-            var emojiIcon = node.emojiIcon || msg.emojiIcon;
-            var channel = node.channel || msg.channel;
-
-            var data = {
-                "text": msg.payload,
-                "username": username,
-                "icon_emoji": emojiIcon
-            };
-            if (channel) { data.channel = channel; }
-            if (msg.attachments) { data.attachments = msg.attachments; }
-            if (slackDebug) { node.log(JSON.stringify(data)); }
-            try {
-                request({
-                    method: 'POST',
-                    uri: channelURL,
-                    body: JSON.stringify(data)
-                });
-            }
-            catch (err) {
-                console.trace();
-                node.log(err,msg);
-            }
-        });
-    }
     
-    RED.nodes.registerType("slack", slackOut)
-    */
     var subscriptions = []
     subscriptions.contain = function(target, filter){
         var needle = subscriptions.filter(function(subscription){
@@ -284,6 +45,11 @@ module.exports = function(RED) {
     }
     
     function subscribeByHash(node, msg){
+        if (node.interface) {
+            //console.log("IFace", node.interface.interface)
+            tokenContract = makeContractTemplate(node.interface.interface)
+            //console.log(tokenContract)
+        }
         return getTokenContract(msg.contractHash || node.contractHash, tokenContract, function(contractInstance) {
             eventSubscribe(contractInstance, function(event) {
                 msg = saveSubscriptionLocally(msg, event, node)
@@ -293,6 +59,11 @@ module.exports = function(RED) {
     }
     
     function historyByHash(node, msg){
+        if (node.interface) {
+            //console.log("IFace", node.interface.interface)
+            tokenContract = makeContractTemplate(node.interface.interface)
+            //console.log(tokenContract)
+        }
         return getTokenContract(msg.contractHash || node.contractHash, tokenContract, function(contractInstance) {
             eventHistory(contractInstance, function(event) {
                 msg.payload = event
@@ -302,6 +73,11 @@ module.exports = function(RED) {
     }
     
     function balanceByHash(node, msg) {
+        if (node.interface) {
+            //console.log("IFace", node.interface.interface)
+            tokenContract = makeContractTemplate(node.interface.interface)
+            //console.log(tokenContract)
+        }
          return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
              getBalance(contractInstance, node.agentAddress || msg.agentAddress || msg.payload, function(balance){
                 msg.payload = balance
@@ -311,6 +87,11 @@ module.exports = function(RED) {
     }
     
     function mintByHash(node, msg) {
+        if (node.interface) {
+            //console.log("IFace", node.interface.interface)
+            tokenContract = makeContractTemplate(node.interface.interface)
+            //console.log(tokenContract)
+        }
          return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
              mintReward(contractInstance, node.agentAddress || msg.agentAddress || msg.payload, node.amount || msg.amount || msg.payload, function(balance){
                 msg.payload = balance
@@ -329,8 +110,10 @@ module.exports = function(RED) {
         return msg
     }
     
+    /* SUBSCRIBE TO EVENTS */
     function subscribe(n) {
-        this.contractHash = n.contractHash;
+        this.contractHash = n.contractHash
+        this.interface = RED.nodes.getNode(n.interface)
         var contractHash
         RED.nodes.createNode(this,n)
         var node = this
@@ -347,10 +130,10 @@ module.exports = function(RED) {
     RED.nodes.registerType("Scooby Subscribe",subscribe)
     
     /* HISTORICAL EVENTS */
-
     function history(n) {
         this.contractHash = n.contractHash;
-        var contractHash
+        this.interface = RED.nodes.getNode(n.interface)
+        var contractHash        
         RED.nodes.createNode(this,n)
         var node = this
         this.on('input', function (msg) {          
@@ -363,6 +146,7 @@ module.exports = function(RED) {
     function balance(n) {
         this.contractHash = n.contractHash
         this.agentAddress = n.agentAddress
+        this.interface = RED.nodes.getNode(n.interface)
         RED.nodes.createNode(this,n)
         var node = this
         this.on('input', function (msg) {
@@ -376,15 +160,26 @@ module.exports = function(RED) {
     function mint(n) {
         this.contractHash = n.contractHash
         this.agentAddress = n.agentAddress
+        this.interface = RED.nodes.getNode(n.interface)
         this.amount = n.amount
         RED.nodes.createNode(this,n)
         var node = this
         this.on('input', function (msg) {
+            console.log("Mint!", msg)
             node.send(msg)        
             mintByHash(node, msg)
         })        
     }
     RED.nodes.registerType("Scooby Mint",mint)
+    
+    /* CONFIG */   
+    function IFace(n) {
+        RED.nodes.createNode(this,n);
+        this.name = n.name;
+        this.interface = n.interface;
+    }
+    RED.nodes.registerType("Interface",IFace);
+    
 }
 
 
@@ -428,7 +223,7 @@ function getBalance(contractInstance, account, cb){
 
 function mintReward(contractInstance, account, amount, cb){
 	//console.log("instance", contractInstance.mint)
-    console.log("amount", amount)
-    console.log("account", account)
+    //console.log("amount", amount)
+    //console.log("account", account)
 	return cb(JSON.stringify(contractInstance.mint.sendTransaction(account, Number(amount), {from:account, gas: 3000000})))
 }

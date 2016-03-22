@@ -12,8 +12,7 @@
   },
   "keywords": [
     "node-red",
-    "ethereum",
-    "web3"
+    "ethereum"
   ],
   "node-red": {
     "nodes": {
@@ -23,7 +22,7 @@
   "author": "Shannon Code",
   "license": "MIT",
   "dependencies": {
-    "request": "^2.51.0",
-    "web3": "^0.15.3"
+    "hooked-web3-provider": "git://github.com/genecyber/hooked-web3-provider.git",
+    "request": "^2.51.0"
   }
 }
