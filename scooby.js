@@ -25,10 +25,26 @@ module.exports = function(RED) {
     
     var Web3 = require("web3")
     if(web3 !== undefined)
-    web3 = new Web3(web3.currentProvider);
+        web3 = new Web3(web3.currentProvider);
     else {
-    web3 = new Web3(new Web3.providers.HttpProvider("http://162.243.248.133:8545"))
+        web3 = new Web3(new Web3.providers.HttpProvider("http://162.243.248.133:8545"))
     }
+    //var HookedWeb3Provider = require("hooked-web3-provider")
+    /*var provider = new HookedWeb3Provider({
+        host: "http://162.243.248.133:8545",
+        transaction_signer: /*{ 
+            // Can be any object that implements the following methods:
+            hasAddress: function(address, callback) {
+                
+            },
+            signTransaction: function(tx_params, callback) {
+                
+            }
+        }*/
+     //   web3.currentProvider
+    //})*/
+    //web3.setProvider(web3.currentProvider)
+    
     RAppAccount = web3.eth.accounts[0] 
     var tokenContract = web3.eth.contract([{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_owner","type":"address"},{"name":"_amount","type":"uint256"}],"name":"mint","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_s","type":"bytes32"}],"name":"setSymbol","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_n","type":"bytes32"}],"name":"setName","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_d","type":"uint256"}],"name":"setDecimals","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"tranferFrom","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"_new_owner","type":"address"}],"name":"transferOwnership","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"}],"name":"unapprove","outputs":[{"name":"success","type":"bool"}],"type":"function"},{"inputs":[],"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"}],"name":"TokenCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":false,"name":"_amount","type":"uint256"}],"name":"TokenMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"}],"name":"OwnershipTransfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Approved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"}],"name":"Unapproved","type":"event"}]);
     function makeContractTemplate(iface) {
@@ -37,32 +53,44 @@ module.exports = function(RED) {
     var tokens = []
     
     var subscriptions = []
-    subscriptions.contain = function(target, filter){
+    var subscriptionContains = function(target, filter){
         var needle = subscriptions.filter(function(subscription){
-            return subscription[target] === filter[target]
+            return subscription[target] === filter
         })
         return needle.length > 0
     }
     
     function subscribeByHash(node, msg){
         if (node.interface) {
-            //console.log("IFace", node.interface.interface)
             tokenContract = makeContractTemplate(node.interface.interface)
-            //console.log(tokenContract)
         }
         return getTokenContract(msg.contractHash || node.contractHash, tokenContract, function(contractInstance) {
-            eventSubscribe(contractInstance, function(event) {
-                msg = saveSubscriptionLocally(msg, event, node)
-                node.send(msg)
-            })
+            //console.log("Subscribing", msg)
+            var needle = subscriptions.filter(function(subscription){
+                        return subscription.contract === msg.contractHash || node.contractHash
+                    })
+                    if (needle.length < 1) {
+                        eventSubscribe(contractInstance, function(event) {
+                            if (event.requestManager) {
+                                //console.log("event subscribed", event, typeof event)
+                                    
+                                    subscriptions.push({contract: msg.contractHash || node.contractHash})
+                                    msg.subscriptions = subscriptions
+                                            
+                            }
+                            //msg.payload = "Get Balance"
+                            //msg.type = "balance"
+                            msg.payload = event
+                            //console.log("received event", msg)
+                            node.send(msg)
+                        })
+                    }
         })
     }
     
     function historyByHash(node, msg){
         if (node.interface) {
-            //console.log("IFace", node.interface.interface)
             tokenContract = makeContractTemplate(node.interface.interface)
-            //console.log(tokenContract)
         }
         return getTokenContract(msg.contractHash || node.contractHash, tokenContract, function(contractInstance) {
             eventHistory(contractInstance, function(event) {
@@ -74,9 +102,7 @@ module.exports = function(RED) {
     
     function balanceByHash(node, msg) {
         if (node.interface) {
-            //console.log("IFace", node.interface.interface)
             tokenContract = makeContractTemplate(node.interface.interface)
-            //console.log(tokenContract)
         }
          return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
              getBalance(contractInstance, node.agentAddress || msg.agentAddress || msg.payload, function(balance){
@@ -88,13 +114,13 @@ module.exports = function(RED) {
     
     function mintByHash(node, msg) {
         if (node.interface) {
-            //console.log("IFace", node.interface.interface)
             tokenContract = makeContractTemplate(node.interface.interface)
-            //console.log(tokenContract)
         }
          return getTokenContract(node.contractHash || msg.contractHash, tokenContract, function(contractInstance) {
-             mintReward(contractInstance, node.agentAddress || msg.agentAddress || msg.payload, node.amount || msg.amount || msg.payload, function(balance){
+             mintReward(contractInstance, node.agentAddress || msg.agentAddress || msg.payload, node.amount || msg.amount || msg.payload, function(err, balance){
+                
                 msg.payload = balance
+                msg.err = err
                 node.send(msg)
             })
         })
@@ -104,7 +130,7 @@ module.exports = function(RED) {
         if (!msg) {msg = {subscriptions: []}}
         if (!msg.subscriptions){msg.subscriptions = []}
         msg.payload = event
-        var newSubscriber = {owner: msg.owner || null, contract: msg.contractHash || node.contractHash}                
+        var newSubscriber = {contract: msg.contractHash || node.contractHash}                
         subscriptions.push(newSubscriber)
         msg.subscriptions.push(newSubscriber)
         return msg
@@ -121,7 +147,8 @@ module.exports = function(RED) {
             msg.subscriptions = subscriptions
             if (!msg.payload.event && (msg.contractHash || node.contractHash)) {
                 contractHash = (msg.contractHash || node.contractHash)
-                if (!subscriptions.contain({contract: contractHash})) {
+                //console.log("peek into subscribe", msg)
+                if (!subscriptionContains(contractHash, {contract: contractHash})) {
                     subscribeByHash(node, msg)
                 }
             }
@@ -162,34 +189,86 @@ module.exports = function(RED) {
         this.agentAddress = n.agentAddress
         this.interface = RED.nodes.getNode(n.interface)
         this.amount = n.amount
+        web3.setProvider(new Web3.providers.HttpProvider(RED.nodes.getNode(n.interface).rpc))
+        console.log(RED.nodes.getNode(n.interface).rpc)
         RED.nodes.createNode(this,n)
         var node = this
         this.on('input', function (msg) {
-            console.log("Mint!", msg)
+            //console.log("Mint!", msg)
             node.send(msg)        
             mintByHash(node, msg)
         })        
     }
     RED.nodes.registerType("Scooby Mint",mint)
     
+     /* DB In */
+    function dbin(n) {
+        this.key = n.key
+        this.db = n.db
+        this.agentAddress = n.agentAddress
+        //web3.setProvider(new Web3.providers.HttpProvider(RED.nodes.getNode(n.interface).rpc))
+        //console.log(RED.nodes.getNode(n.interface).rpc)
+        RED.nodes.createNode(this,n)
+        var node = this
+        this.on('input', function (msg) {
+            console.log("PUT",msg)
+            var result = web3.db.putString(msg.db || this.db, msg.key || this.key , JSON.stringify(msg.payload))
+            if (result) {
+                result = web3.db.getString(msg.db || this.db, msg.key || this.key)
+                msg.payload = JSON.parse(result)
+            } else {
+                msg.error = true
+                msg.payload = "Not Found"
+            }              
+            node.send(msg)          
+        })        
+    }
+    RED.nodes.registerType("Scooby DB Put", dbin)
+    
+    /* DB Out */
+    function dbout(n) {
+        this.key = n.key
+        this.db = n.db
+        this.agentAddress = n.agentAddress
+        //web3.setProvider(new Web3.providers.HttpProvider(RED.nodes.getNode(n.interface).rpc))
+        //console.log(RED.nodes.getNode(n.interface).rpc)
+        RED.nodes.createNode(this, n)
+        var node = this
+        var result
+        this.on('input', function(msg) {
+            try {
+                //console.log("Requesting", n, msg)
+                result = web3.db.getString(msg.db || this.db, msg.key || this.key)
+                msg.payload = JSON.parse(result)
+                msg.error = false
+            } catch(e){
+                //console.log("result", result, e)
+                msg.errorMsg = e.toString()
+                msg.error = true
+            }
+            node.send(msg)
+        })
+    }
+    RED.nodes.registerType("Scooby DB Get", dbout)
+    
     /* CONFIG */   
     function IFace(n) {
         RED.nodes.createNode(this,n);
         this.name = n.name;
         this.interface = n.interface;
+        this.rpc = n.rpc;
     }
     RED.nodes.registerType("Interface",IFace);
     
 }
 
-
-
-function eventSubscribe(contractInstance, cb){
-	var events = contractInstance.allEvents({}, function(error, log){
-		if (!error) {
-			return cb(log)
-		}
-	})
+function eventSubscribe(contractInstance, cb) {
+    //console.log("starting subscribe")
+    var events = contractInstance.allEvents({ fromBlock: 'latest' })
+    events.watch(function(error, result) {
+        //console.log("result", result)
+        return cb(result)
+    })
 }
 
 function eventHistory(contractInstance, cb){
@@ -217,13 +296,12 @@ function getTokenContract(contractLocation, tokenContract, cb){
 }
 
 function getBalance(contractInstance, account, cb){
-    //console.log("sent account", account)
 	return cb(contractInstance.balanceOf(RAppAccount))
 }
 
 function mintReward(contractInstance, account, amount, cb){
-	//console.log("instance", contractInstance.mint)
-    //console.log("amount", amount)
-    //console.log("account", account)
-	return cb(JSON.stringify(contractInstance.mint.sendTransaction(account, Number(amount), {from:account, gas: 3000000})))
+	contractInstance.mint.sendTransaction(account, Number(amount), {from:account, gas: 3000000}, function(err, result){
+        console.log("err", err, "result", result)
+        return cb(err, JSON.stringify(result))
+    })
 }
