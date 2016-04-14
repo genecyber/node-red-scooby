@@ -14,7 +14,7 @@
   limitations under the License.
 -->
 
-<script type="text/x-red" data-template-name="Scooby Subscribe">
+<script type="text/x-red" data-template-name="Subscribe">
     <div class="form-row">
         <label for="node-input-interface"><i class="fa fa-slack"></i> Interface</label>
         <input type="text" id="node-input-interface" placeholder="Interface" style=" vertical-align: top;">
@@ -29,14 +29,14 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="Scooby Subscribe">
+<script type="text/x-red" data-help-name="Subscribe">
     <p>Sends the <b>msg.payload</b> when a subscribed events occurs.</p>
     <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
 </script>
 
 
 <script type="text/javascript">   
-    RED.nodes.registerType('Scooby Subscribe',{
+    RED.nodes.registerType('Subscribe',{
         category: 'Rewards',
         defaults: {
             interface: {value:"", type:"Interface"},
@@ -58,7 +58,7 @@
 </script>
 
 <!-- EVENT HISTORY -->
-<script type="text/x-red" data-template-name="Scooby History">
+<script type="text/x-red" data-template-name="History">
     <div class="form-row">
         <label for="node-input-interface"><i class="fa fa-slack"></i> Interface</label>
         <input type="text" id="node-input-interface" placeholder="Interface" style=" vertical-align: top;">
@@ -73,14 +73,14 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="Scooby History">
+<script type="text/x-red" data-help-name="History">
     <p>Sends the <b>msg.payload</b> containing all historical events.</p>
     <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
 </script>
 
 
 <script type="text/javascript">   
-    RED.nodes.registerType('Scooby History',{
+    RED.nodes.registerType('History',{
         category: 'Rewards',
         defaults: {
             interface: {value:"", type:"Interface"},
@@ -101,8 +101,106 @@
     });    
 </script>
 
+<!-- CREATE REWARD -->
+<script type="text/x-red" data-template-name="CreateReward">
+    <div class="form-row">
+        <label for="node-input-interface"><i class="fa fa-slack"></i> Interface</label>
+        <input type="text" id="node-input-interface" placeholder="Interface" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="CreateReward">
+    <p>
+       Creates a new reward and returns the address of that new reward code.
+    </p>      
+</script>
+
+<script type="text/javascript">   
+    RED.nodes.registerType('CreateReward',{
+        category: 'Rewards',
+        defaults: {
+            interface: {value:"", type:"Interface"},
+            name: {value:""}
+        },
+        color:"#4C9689",
+        icon: "hash.png",
+        align: "right",
+        inputs:1,
+        outputs:2,
+        label: function() {
+            return this.name||"Create New Reward";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });    
+</script>
+
+<!-- TRANSFER REWARD -->
+<script type="text/x-red" data-template-name="TransferReward">
+    <div class="form-row">
+        <label for="node-input-interface"><i class="fa fa-slack"></i> Interface</label>
+        <input type="text" id="node-input-interface" placeholder="Interface" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-agentAddress"><i class="fa fa-slack"></i>From Address</label>
+        <input type="text" id="node-input-agentAddress" placeholder="agentAddress" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-destinationAddress"><i class="fa fa-slack"></i>To Address</label>
+        <input type="text" id="node-input-destinationAddress" placeholder="destinationAddress" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-contractHash"><i class="fa fa-slack"></i> Contract</label>
+        <input type="text" id="node-input-contractHash" placeholder="contractHash" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-amount"><i class="fa fa-slack"></i> Amount</label>
+        <input type="text" id="node-input-amount" placeholder="amount" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="TransferReward">
+    <p>
+       Transfers reward(s) to another agent.
+    </p>      
+</script>
+
+<script type="text/javascript">   
+    RED.nodes.registerType('TransferReward',{
+        category: 'Rewards',
+        defaults: {
+            interface: {value:"", type:"Interface"},
+            agentAddress: {value:"0xac19dcdafbd2396339d2b4ae961ae212db2831cf"},
+            destinationAddress: {value:"0xac19dcdafbd2396339d2b4ae961ae212db2831cf"},
+            contractHash: {value:"0xcdd8be60354a2ad0410c1e95f7395306f846a3d9"},
+            amount: {value: 1},
+            name: {value:"Transfer Rewards"}
+        },
+        color:"#4C9689",
+        icon: "hash.png",
+        align: "right",
+        inputs:1,
+        outputs:1,
+        label: function() {
+            return this.name||"Transfer Reward";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });    
+</script>
+
 <!-- BALANCE -->
-<script type="text/x-red" data-template-name="Scooby Balance">
+<script type="text/x-red" data-template-name="Balance">
     <div class="form-row">
         <label for="node-input-interface"><i class="fa fa-slack"></i> Interface</label>
         <input type="text" id="node-input-interface" placeholder="Interface" style=" vertical-align: top;">
@@ -121,14 +219,14 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="Scooby Balance">
+<script type="text/x-red" data-help-name="Balance">
     <p>Sends the <b>msg.payload</b> containing balance.</p>
     <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
 </script>
 
 
 <script type="text/javascript">   
-    RED.nodes.registerType('Scooby Balance',{
+    RED.nodes.registerType('Balance',{
         category: 'Rewards',
         defaults: {
             interface: {value:"", type:"Interface"},
@@ -151,7 +249,7 @@
 </script>
 
 <!-- MINT -->
-<script type="text/x-red" data-template-name="Scooby Mint">
+<script type="text/x-red" data-template-name="Mint">
     <div class="form-row">
         <label for="node-input-interface"><i class="fa fa-slack"></i> Interface</label>
         <input type="text" id="node-input-interface" placeholder="Interface" style=" vertical-align: top;">
@@ -174,14 +272,14 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="Scooby Mint">
+<script type="text/x-red" data-help-name="Mint">
     <p>Mints the <b>msg.amount</b> of new reward.</p>
     <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
 </script>
 
 
 <script type="text/javascript">   
-    RED.nodes.registerType('Scooby Mint',{
+    RED.nodes.registerType('Mint',{
         category: 'Rewards',
         defaults: {
             interface: {value:"", type:"Interface"},
@@ -205,7 +303,7 @@
 </script>
 
 <!-- DB In -->
-<script type="text/x-red" data-template-name="Scooby DB Put">
+<script type="text/x-red" data-template-name="DB Put">
     <div class="form-row">
         <label for="node-input-agentAddress"><i class="fa fa-slack"></i> Address</label>
         <input type="text" id="node-input-agentAddress" placeholder="agentAddress" style=" vertical-align: top;">
@@ -224,14 +322,14 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="Scooby DB Put">
+<script type="text/x-red" data-help-name="DB Put">
     <p>Mints the <b>msg.amount</b> of new reward.</p>
     <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
 </script>
 
 
 <script type="text/javascript">   
-    RED.nodes.registerType('Scooby DB Put',{
+    RED.nodes.registerType('DB Put',{
         category: 'Rewards',
         defaults: {
             name: {value:""},
@@ -254,7 +352,7 @@
 </script>
 
 <!-- DB Out -->
-<script type="text/x-red" data-template-name="Scooby DB Get">
+<script type="text/x-red" data-template-name="DB Get">
     <div class="form-row">
         <label for="node-input-agentAddress"><i class="fa fa-slack"></i> Address</label>
         <input type="text" id="node-input-agentAddress" placeholder="agentAddress" style=" vertical-align: top;">
@@ -273,14 +371,14 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="Scooby DB Get">
+<script type="text/x-red" data-help-name="DB Get">
     <p>Mints the <b>msg.amount</b> of new reward.</p>
     <p>You can optionally override the hash if required - either in the edit dialogue or by setting <b>msg.contractHash</b>.</p>
 </script>
 
 
 <script type="text/javascript">   
-    RED.nodes.registerType('Scooby DB Get',{
+    RED.nodes.registerType('DB Get',{
         category: 'Rewards',
         defaults: {
             name: {value:""},
