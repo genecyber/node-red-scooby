@@ -13,7 +13,6 @@ module.exports = function(RED) {
     else {
         web3 = new Web3(new Web3.providers.HttpProvider("http://162.243.248.133:8545"))
     }
-    RAppAccount = web3.eth.accounts[0]
     var tokenContract = web3.eth.contract(getAbi(2));
     function makeContractTemplate(iface) {
         return web3.eth.contract(JSON.parse(iface))
@@ -76,7 +75,8 @@ module.exports = function(RED) {
     function mineContract(node, msg) {
         if (node.interface) {
             tokenContract = makeContractTemplate(node.interface.interface)
-        }
+        }        
+        RAppAccount = web3.eth.accounts[0]
         newTokenContract(RAppAccount, tokenContract, function(contract, err) {
             msg.payload = contract
             msg.err = err
@@ -106,7 +106,7 @@ module.exports = function(RED) {
         }
         return getTokenContract(msg.contractHash || node.contractHash, tokenContract, function(contractInstance) {
             transferReward(contractInstance, msg.agentAddress || node.agentAddress || msg.payload, msg.destinationAddress || node.destinationAddress || msg.payload, msg.amount || node.amount || msg.payload, function(err, result) {
-                msg.payload = result
+                msg.payload = JSON.parse(result)
                 msg.err = err
                 node.send(msg)
             })
@@ -326,14 +326,15 @@ function getBalance(contractInstance, account, cb) {
     return cb(contractInstance.balanceOf(account))
 }
 
-function mintReward(contractInstance, account, amount, cb) {
+function mintReward(contractInstance, account, amount, cb) {    
+    RAppAccount = web3.eth.accounts[0]
     contractInstance.mint.sendTransaction(account, Number(amount), { from: RAppAccount, gas: 3000000 }, function(err, result) {
-        //console.log("err", err, "result", result)
         return cb(err, JSON.stringify(result))
     })
 }
 
 function transferReward(contractInstance, account, destination, amount, cb) {
+    RAppAccount = web3.eth.accounts[0]
     contractInstance.ownerTransferFrom(account, destination, Number(amount), { from: RAppAccount, gas: 3000000 }, function(err, result) {
         return cb(err, JSON.stringify(result))
     })
