@@ -71,6 +71,14 @@ module.exports = function(RED) {
             })
         })
     }
+    
+    function lastBlockNumber(node, msg) {
+        getBlockNumber(function(number){
+            msg.payload = number
+            node.send(msg)
+        })
+        
+    }
 
     function mineContract(node, msg) {
         if (node.interface) {
@@ -179,6 +187,18 @@ module.exports = function(RED) {
         })
     }
     RED.nodes.registerType("Balance", balance)
+    
+    /* BLOCK */
+    function blockNumber(n) {
+        this.agentAddress = n.agentAddress
+        this.interface = RED.nodes.getNode(n.interface)
+        RED.nodes.createNode(this, n)
+        var node = this
+        this.on('input', function(msg) {
+            lastBlockNumber(node, msg)
+        })
+    }
+    RED.nodes.registerType("BlockNumber", blockNumber)
 
     /* MINT */
     function mint(n) {
@@ -320,6 +340,11 @@ function getByteCode(version) {
 
 function getTokenContract(contractLocation, tokenContract, cb) {
     return cb(tokenContract.at(contractLocation))
+}
+
+function getBlockNumber(cb) {
+    var number = web3.eth.blockNumber;
+    return cb(number)
 }
 
 function getBalance(contractInstance, account, cb) {

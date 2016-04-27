@@ -248,6 +248,44 @@
     });    
 </script>
 
+<!-- BLOCK -->
+<script type="text/x-red" data-template-name="BlockNumber">
+    <div class="form-row">
+        <label for="node-input-interface"><i class="fa fa-slack"></i> Interface</label>
+        <input type="text" id="node-input-interface" placeholder="Interface" style=" vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="BlockNumber">
+    <p>Returns the last block number.</p>
+</script>
+
+
+<script type="text/javascript">   
+    RED.nodes.registerType('BlockNumber',{
+        category: 'loyyal',
+        defaults: {
+            interface: {value:"", type:"Interface"},
+            name: {value:"BlockNumber"}
+        },
+        color:"#CCDEFF",
+        icon: "loyyal.png",
+        align: "right",
+        inputs:1,
+        outputs:1,
+        label: function() {
+            return this.name||"BlockNumber";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });    
+</script>
+
 <!-- MINT -->
 <script type="text/x-red" data-template-name="Mint">
     <div class="form-row">
